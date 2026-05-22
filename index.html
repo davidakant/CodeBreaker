@@ -1,0 +1,489 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Code Breaker</title>
+  <style>
+    *, *::before, *::after {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      background: #0d1117;
+      display: flex;
+      justify-content: center;
+      align-items: flex-start;
+      padding: 40px 16px;
+      min-height: 100vh;
+      font-family: 'Segoe UI', system-ui, sans-serif;
+      color: #e6edf3;
+    }
+
+    #module {
+      background: #161b22;
+      border: 1px solid #30363d;
+      border-radius: 16px;
+      padding: 28px 24px 24px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 20px;
+      box-shadow: 0 16px 48px rgba(0, 0, 0, 0.5);
+    }
+
+    header {
+      text-align: center;
+    }
+
+    h1 {
+      font-size: 1.6rem;
+      font-weight: 700;
+      letter-spacing: 0.15em;
+      text-transform: uppercase;
+      color: #58a6ff;
+    }
+
+    h1 span {
+      color: #f0883e;
+    }
+
+    #subtitle {
+      font-size: 0.78rem;
+      color: #8b949e;
+      margin-top: 4px;
+      letter-spacing: 0.05em;
+    }
+
+    /* ── Rules ── */
+    #rules {
+      max-width: 540px;
+      margin-bottom: 16px;
+      color: #8b949e;
+      font-size: 1.275rem;
+      line-height: 1.6;
+    }
+
+    #rules h2 {
+      font-size: 1.05rem;
+      font-weight: 600;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: #58a6ff;
+      margin-bottom: 8px;
+    }
+
+    #rules ul {
+      padding-left: 1.2em;
+    }
+
+    #rules li {
+      margin-bottom: 4px;
+    }
+
+    #rules strong {
+      color: #e6edf3;
+    }
+
+    #legend {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      margin-top: 8px;
+      padding-left: 1.2em;
+    }
+
+    .legend-item {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .swatch {
+      width: 14px;
+      height: 14px;
+      border-radius: 3px;
+      flex-shrink: 0;
+    }
+
+    .swatch.green  { background: #2ea043; }
+    .swatch.yellow { background: #d29922; }
+    .swatch.gray   { background: #484f58; }
+
+    /* ── Grid ── */
+    #grid {
+      display: grid;
+      grid-template-columns: repeat(5, 54px);
+      grid-template-rows: repeat(6, 54px);
+      gap: 6px;
+    }
+
+    .cell {
+      width: 54px;
+      height: 54px;
+      border: 2px solid #30363d;
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.7rem;
+      font-weight: 700;
+      color: #e6edf3;
+      background: transparent;
+      transition: border-color 0.15s;
+      user-select: none;
+    }
+
+    .cell.active-row {
+      border-color: #484f58;
+    }
+
+    .cell.filled {
+      border-color: #58a6ff;
+      animation: pop 0.1s ease;
+    }
+
+    .cell.green  { background: #1f6b2e; border-color: #2ea043; color: #fff; }
+    .cell.yellow { background: #7d5f00; border-color: #d29922; color: #fff; }
+    .cell.gray   { background: #21262d; border-color: #30363d; color: #8b949e; }
+
+    @keyframes pop {
+      0%   { transform: scale(1); }
+      50%  { transform: scale(1.12); }
+      100% { transform: scale(1); }
+    }
+
+    @keyframes shake {
+      0%, 100% { transform: translateX(0); }
+      20%       { transform: translateX(-6px); }
+      40%       { transform: translateX(6px); }
+      60%       { transform: translateX(-4px); }
+      80%       { transform: translateX(4px); }
+    }
+
+    .shake { animation: shake 0.35s ease; }
+
+    /* ── Keypad ── */
+    #keypad {
+      display: grid;
+      grid-template-columns: repeat(3, 54px);
+      gap: 6px;
+    }
+
+    .key {
+      width: 54px;
+      height: 54px;
+      border: 2px solid #30363d;
+      border-radius: 8px;
+      font-size: 1.7rem;
+      font-weight: 700;
+      cursor: pointer;
+      color: #e6edf3;
+      background: transparent;
+      transition: background 0.12s, border-color 0.12s, transform 0.08s;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      user-select: none;
+    }
+
+    .key:hover  { background: #21262d; border-color: #484f58; }
+    .key:active { transform: scale(0.92); }
+
+    .key.del {
+      font-size: 1.1rem;
+      color: #f0883e;
+      border-color: #f0883e44;
+    }
+    .key.del:hover { background: #1e160f; border-color: #f0883e; }
+
+    .key.enter {
+      font-size: 0.72rem;
+      letter-spacing: 0.06em;
+      color: #3fb950;
+      border-color: #3fb95044;
+    }
+    .key.enter:hover { background: #0d1f16; border-color: #3fb950; }
+
+    .key.spacer {
+      visibility: hidden;
+      pointer-events: none;
+    }
+
+    /* ── Message ── */
+    #message {
+      font-size: 0.88rem;
+      color: #8b949e;
+      min-height: 1.3em;
+      text-align: center;
+      letter-spacing: 0.03em;
+    }
+
+    #message.win  { color: #3fb950; font-weight: 600; }
+    #message.lose { color: #f85149; font-weight: 600; }
+
+    /* ── New Game button ── */
+    #new-game {
+      background: #1f6b2e;
+      border: 1px solid #2ea043;
+      color: #e6edf3;
+      border-radius: 8px;
+      padding: 10px 28px;
+      font-size: 0.9rem;
+      font-weight: 600;
+      cursor: pointer;
+      letter-spacing: 0.05em;
+      transition: background 0.15s;
+      display: none;
+    }
+    #new-game:hover { background: #2ea043; }
+  </style>
+</head>
+<body>
+  <div id="rules">
+    <h2>How to Play</h2>
+    <ul>
+      <li>Guess the secret <strong>5-digit code</strong> (digits 0–9, repeats allowed).</li>
+      <li>You have <strong>6 attempts</strong>. Click the number squares to build your guess, then press <strong>ENTER</strong>.</li>
+      <li>After each guess, each square is colored to show how close you were:</li>
+    </ul>
+    <div id="legend">
+      <div class="legend-item"><span class="swatch green"></span> Correct digit, correct position</div>
+      <div class="legend-item"><span class="swatch yellow"></span> Correct digit, wrong position</div>
+      <div class="legend-item"><span class="swatch gray"></span> Digit not in the code</div>
+    </div>
+  </div>
+
+  <div id="module">
+    <header>
+      <h1>Code <span>Breaker</span></h1>
+      <p id="subtitle">Guess the 5-digit code &mdash; 6 tries</p>
+    </header>
+
+    <div id="grid"></div>
+
+    <div id="keypad"></div>
+
+    <p id="message">Enter your first guess</p>
+    <button id="new-game" onclick="newGame()">New Game</button>
+  </div>
+
+  <script>
+    let secretCode, currentRow, currentCol, guesses, gameOver, isAnimating;
+
+    function generateCode() {
+      return Array.from({ length: 5 }, () => Math.floor(Math.random() * 10));
+    }
+
+    function buildGrid() {
+      const grid = document.getElementById('grid');
+      grid.innerHTML = '';
+      for (let r = 0; r < 6; r++) {
+        for (let c = 0; c < 5; c++) {
+          const cell = document.createElement('div');
+          cell.className = 'cell' + (r === 0 ? ' active-row' : '');
+          cell.id = `c${r}-${c}`;
+          grid.appendChild(cell);
+        }
+      }
+    }
+
+    function buildKeypad() {
+      const keypad = document.getElementById('keypad');
+      keypad.innerHTML = '';
+
+      // Row 1: 1 2 3
+      // Row 2: 4 5 6
+      // Row 3: 7 8 9
+      // Row 4: DEL 0 ENT
+      const layout = [1, 2, 3, 4, 5, 6, 7, 8, 9, 'DEL', 0, 'ENT'];
+
+      layout.forEach(k => {
+        const btn = document.createElement('button');
+
+        if (k === 'DEL') {
+          btn.className = 'key del';
+          btn.textContent = '⌫';
+          btn.setAttribute('aria-label', 'Delete');
+          btn.onclick = deleteDigit;
+        } else if (k === 'ENT') {
+          btn.className = 'key enter';
+          btn.textContent = 'ENTER';
+          btn.setAttribute('aria-label', 'Submit guess');
+          btn.onclick = submitGuess;
+        } else {
+          btn.className = 'key';
+          btn.textContent = k;
+          btn.onclick = () => addDigit(k);
+        }
+
+        keypad.appendChild(btn);
+      });
+    }
+
+    function newGame() {
+      secretCode = generateCode();
+      currentRow = 0;
+      currentCol = 0;
+      guesses = Array.from({ length: 6 }, () => Array(5).fill(null));
+      gameOver = false;
+      isAnimating = false;
+
+      buildGrid();
+      buildKeypad();
+
+      setMessage('Enter your first guess', '');
+      document.getElementById('new-game').style.display = 'none';
+    }
+
+    function addDigit(digit) {
+      if (gameOver || isAnimating || currentCol >= 5) return;
+
+      guesses[currentRow][currentCol] = digit;
+      const cell = document.getElementById(`c${currentRow}-${currentCol}`);
+      cell.textContent = digit;
+      cell.classList.add('filled');
+      currentCol++;
+    }
+
+    function deleteDigit() {
+      if (gameOver || isAnimating || currentCol === 0) return;
+
+      currentCol--;
+      guesses[currentRow][currentCol] = null;
+      const cell = document.getElementById(`c${currentRow}-${currentCol}`);
+      cell.textContent = '';
+      cell.classList.remove('filled');
+    }
+
+    function submitGuess() {
+      if (gameOver || isAnimating) return;
+
+      if (currentCol < 5) {
+        shakeCurrentRow();
+        setMessage('Enter all 5 digits first', '');
+        return;
+      }
+
+      const guess = guesses[currentRow];
+      const result = evaluateGuess(guess);
+
+      revealRow(currentRow, result, () => {
+        const won = result.every(r => r === 'green');
+        if (won) {
+          const tries = currentRow + 1;
+          setMessage(
+            `You cracked the code in ${tries} ${tries === 1 ? 'try' : 'tries'}!`,
+            'win'
+          );
+          gameOver = true;
+          document.getElementById('new-game').style.display = 'inline-block';
+        } else if (currentRow === 5) {
+          setMessage(`Game over — the code was ${secretCode.join('')}`, 'lose');
+          gameOver = true;
+          document.getElementById('new-game').style.display = 'inline-block';
+        } else {
+          currentRow++;
+          currentCol = 0;
+          markActiveRow(currentRow);
+          const left = 6 - currentRow;
+          setMessage(`${left} ${left === 1 ? 'guess' : 'guesses'} remaining`, '');
+        }
+      });
+    }
+
+    function evaluateGuess(guess) {
+      const result = Array(5).fill('gray');
+      const code = [...secretCode];
+      const g = [...guess];
+
+      // Green pass: correct digit in correct position
+      for (let i = 0; i < 5; i++) {
+        if (g[i] === code[i]) {
+          result[i] = 'green';
+          code[i] = -1;
+          g[i] = -1;
+        }
+      }
+
+      // Yellow pass: correct digit in wrong position
+      for (let i = 0; i < 5; i++) {
+        if (g[i] === -1) continue;
+        const idx = code.indexOf(g[i]);
+        if (idx !== -1) {
+          result[i] = 'yellow';
+          code[idx] = -1;
+        }
+      }
+
+      return result;
+    }
+
+    function revealRow(row, result, onDone) {
+      isAnimating = true;
+      const STAGGER = 180;   // ms between each cell
+      const FLIP_HALF = 150; // ms: when to swap the color mid-flip
+
+      result.forEach((color, c) => {
+        const cell = document.getElementById(`c${row}-${c}`);
+
+        setTimeout(() => {
+          // Shrink down
+          cell.style.transition = `transform ${FLIP_HALF}ms ease`;
+          cell.style.transform = 'scaleY(0)';
+
+          setTimeout(() => {
+            // Apply color while invisible
+            cell.classList.remove('filled', 'active-row');
+            cell.classList.add(color);
+            // Expand back up
+            cell.style.transform = 'scaleY(1)';
+          }, FLIP_HALF);
+        }, c * STAGGER);
+      });
+
+      const totalTime = (result.length - 1) * STAGGER + FLIP_HALF * 2 + 60;
+      setTimeout(() => {
+        isAnimating = false;
+        onDone();
+      }, totalTime);
+    }
+
+    function markActiveRow(row) {
+      for (let c = 0; c < 5; c++) {
+        document.getElementById(`c${row}-${c}`).classList.add('active-row');
+      }
+    }
+
+    function shakeCurrentRow() {
+      for (let c = 0; c < 5; c++) {
+        const cell = document.getElementById(`c${currentRow}-${c}`);
+        cell.classList.remove('shake');
+        void cell.offsetWidth; // reflow to restart animation
+        cell.classList.add('shake');
+      }
+    }
+
+    function setMessage(text, cls) {
+      const el = document.getElementById('message');
+      el.textContent = text;
+      el.className = cls;
+    }
+
+    // Keyboard support
+    document.addEventListener('keydown', e => {
+      if (e.key >= '0' && e.key <= '9') {
+        addDigit(parseInt(e.key));
+      } else if (e.key === 'Backspace') {
+        deleteDigit();
+      } else if (e.key === 'Enter') {
+        submitGuess();
+      }
+    });
+
+    newGame();
+  </script>
+</body>
+</html>
