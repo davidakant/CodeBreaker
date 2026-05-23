@@ -14,25 +14,256 @@
     body {
       background: #0d1117;
       display: flex;
-      justify-content: center;
-      align-items: flex-start;
-      padding: 40px 16px;
+      flex-direction: column;
+      align-items: center;
+      padding: 20px 12px;
       min-height: 100vh;
       font-family: 'Segoe UI', system-ui, sans-serif;
       color: #e6edf3;
     }
 
+    /* ── Module ── */
+    #module {
+      background: #161b22;
+      border: 1px solid #30363d;
+      border-radius: 16px;
+      padding: 20px 16px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 16px;
+      box-shadow: 0 16px 48px rgba(0, 0, 0, 0.5);
+      width: 100%;
+      max-width: 366px;
+    }
+
+    header {
+      text-align: center;
+    }
+
+    h1 {
+      font-size: 1.3rem;
+      font-weight: 700;
+      letter-spacing: 0.15em;
+      text-transform: uppercase;
+      color: #ff2222;
+    }
+
+    h1 span {
+      color: #22ff44;
+    }
+
+    /* ── Seven-Segment Displays ── */
+    #feedback-area,
+    #display-area {
+      display: flex;
+      gap: 8px;
+      padding: 14px 16px;
+      border-radius: 10px;
+      box-shadow: inset 0 2px 12px rgba(0, 0, 0, 0.8);
+    }
+
+    #feedback-area {
+      background: #060d03;
+      border: 2px solid #162405;
+    }
+
+    #display-area {
+      background: #080000;
+      border: 2px solid #2a0000;
+    }
+
+    .digit {
+      position: relative;
+      width: 52px;
+      height: 91px;
+    }
+
+    .seg {
+      position: absolute;
+      transition: background 0.06s, box-shadow 0.06s;
+    }
+
+    /* Input display — red */
+    #display-area .seg    { background: #2d0000; }
+    #display-area .seg.on { background: #ff2222; box-shadow: 0 0 6px #ff2222, 0 0 16px #ff000055; }
+
+    /* Feedback display — unlit is dark olive (midpoint of dark green & dark yellow) */
+    #feedback-area .seg       { background: #141f05; }
+    #feedback-area .digit[data-result="green"]  .seg.on { background: #22ff44; box-shadow: 0 0 6px #22ff44, 0 0 16px #00ff4455; }
+    #feedback-area .digit[data-result="yellow"] .seg.on { background: #ffe600; box-shadow: 0 0 6px #ffe600, 0 0 16px #ffe60055; }
+
+    /* Horizontal segments: a (top), g (middle), d (bottom) */
+    .seg-a, .seg-g, .seg-d {
+      left: 7px;
+      right: 7px;
+      height: 6px;
+      border-radius: 3px;
+    }
+
+    .seg-a { top: 0; }
+    .seg-g { top: calc(50% - 3px); }
+    .seg-d { bottom: 0; }
+
+    /* Vertical segments */
+    .seg-f, .seg-b, .seg-e, .seg-c {
+      width: 6px;
+      border-radius: 3px;
+    }
+
+    .seg-f, .seg-b {
+      top: 7px;
+      height: calc(50% - 10px);
+    }
+    .seg-f { left: 0; }
+    .seg-b { right: 0; }
+
+    .seg-e, .seg-c {
+      bottom: 7px;
+      height: calc(50% - 10px);
+    }
+    .seg-e { left: 0; }
+    .seg-c { right: 0; }
+
+    /* ── Guess Dots ── */
+    #guess-dots {
+      display: flex;
+      gap: 12px;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .guess-dot {
+      width: 12px;
+      height: 12px;
+      border-radius: 50%;
+      background: #30363d;
+      transition: background 0.2s, box-shadow 0.2s;
+    }
+
+    .guess-dot.used {
+      background: #ff2222;
+      box-shadow: 0 0 6px #ff2222, 0 0 14px #ff000055;
+    }
+
+    .guess-dot.correct {
+      background: #22ff44;
+      box-shadow: 0 0 6px #22ff44, 0 0 14px #00ff4455;
+    }
+
+    /* ── Keypad ── */
+    #keypad {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    #keypad-numbers {
+      display: grid;
+      grid-template-columns: repeat(5, 52px);
+      gap: 6px;
+    }
+
+    #keypad-actions {
+      display: flex;
+      gap: 6px;
+    }
+
+    #keypad-actions .key {
+      flex: 1;
+    }
+
+    .key {
+      width: 52px;
+      height: 52px;
+      border: 2px solid #30363d;
+      border-radius: 8px;
+      font-size: 1.4rem;
+      font-weight: 700;
+      cursor: pointer;
+      color: #e6edf3;
+      background: transparent;
+      transition: background 0.12s, border-color 0.12s, transform 0.08s;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      user-select: none;
+    }
+
+    .key:hover  { background: #21262d; border-color: #484f58; }
+    .key:active { transform: scale(0.92); }
+
+    .key.del {
+      font-size: 0.9rem;
+      color: #ff2222;
+      border-color: #ff222244;
+    }
+    .key.del:hover { background: #1a0000; border-color: #ff2222; }
+
+    .key.enter {
+      font-size: 0.6rem;
+      letter-spacing: 0.06em;
+      color: #ff2222;
+      border-color: #ff222244;
+    }
+    .key.enter:hover { background: #1a0000; border-color: #ff2222; }
+
+    .key.del.won,
+    .key.enter.won { color: #22ff44; border-color: #22ff4444; }
+    .key.del.won:hover,
+    .key.enter.won:hover { background: #001a00; border-color: #22ff44; }
+
+    /* ── Shake animation ── */
+    @keyframes shake {
+      0%, 100% { transform: translateX(0); }
+      20%       { transform: translateX(-6px); }
+      40%       { transform: translateX(6px); }
+      60%       { transform: translateX(-4px); }
+      80%       { transform: translateX(4px); }
+    }
+
+    .shake { animation: shake 0.35s ease; }
+
+    /* ── Message ── */
+    #message {
+      font-size: 0.72rem;
+      color: #8b949e;
+      min-height: 1.3em;
+      text-align: center;
+      letter-spacing: 0.03em;
+    }
+
+    #message.win  { color: #3fb950; font-weight: 600; }
+    #message.lose { color: #f85149; font-weight: 600; }
+
+    /* ── New Game button ── */
+    #new-game {
+      background: #1f6b2e;
+      border: 1px solid #2ea043;
+      color: #e6edf3;
+      border-radius: 8px;
+      padding: 9px 24px;
+      font-size: 0.78rem;
+      font-weight: 600;
+      cursor: pointer;
+      letter-spacing: 0.05em;
+      transition: background 0.15s;
+      display: none;
+    }
+    #new-game:hover { background: #2ea043; }
+
     /* ── Rules ── */
     #rules {
-      max-width: 540px;
-      margin-bottom: 40px;
+      width: 100%;
+      max-width: 366px;
+      margin-top: 24px;
       color: #8b949e;
-      font-size: 1.275rem;
+      font-size: 1.05rem;
       line-height: 1.6;
     }
 
     #rules h2 {
-      font-size: 1.05rem;
+      font-size: 0.85rem;
       font-weight: 600;
       letter-spacing: 0.12em;
       text-transform: uppercase;
@@ -67,8 +298,8 @@
     }
 
     .swatch {
-      width: 14px;
-      height: 14px;
+      width: 12px;
+      height: 12px;
       border-radius: 3px;
       flex-shrink: 0;
     }
@@ -76,245 +307,26 @@
     .swatch.green  { background: #2ea043; }
     .swatch.yellow { background: #ffe600; }
     .swatch.gray   { background: #484f58; }
-
-    /* ── Module ── */
-    #module {
-      background: #161b22;
-      border: 1px solid #30363d;
-      border-radius: 16px;
-      padding: 28px 24px 24px;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      gap: 20px;
-      box-shadow: 0 16px 48px rgba(0, 0, 0, 0.5);
-    }
-
-    header {
-      text-align: center;
-    }
-
-    h1 {
-      font-size: 1.6rem;
-      font-weight: 700;
-      letter-spacing: 0.15em;
-      text-transform: uppercase;
-      color: #ff2222;
-    }
-
-    h1 span {
-      color: #22ff44;
-    }
-
-
-/* ── Seven-Segment Displays ── */
-    #feedback-area,
-    #display-area {
-      display: flex;
-      gap: 10px;
-      padding: 18px 20px;
-      border-radius: 10px;
-      box-shadow: inset 0 2px 12px rgba(0, 0, 0, 0.8);
-    }
-
-    #feedback-area {
-      background: #060d03;
-      border: 2px solid #162405;
-    }
-
-    #display-area {
-      background: #080000;
-      border: 2px solid #2a0000;
-    }
-
-    .digit {
-      position: relative;
-      width: 64px;
-      height: 112px;
-    }
-
-    .seg {
-      position: absolute;
-      transition: background 0.06s, box-shadow 0.06s;
-    }
-
-    /* Input display — red */
-    #display-area .seg        { background: #2d0000; }
-    #display-area .seg.on     { background: #ff2222; box-shadow: 0 0 6px #ff2222, 0 0 16px #ff000055; }
-
-    /* Feedback display — unlit is dark olive (midpoint of dark green & dark yellow) */
-    #feedback-area .seg       { background: #141f05; }
-    #feedback-area .digit[data-result="green"]  .seg.on { background: #22ff44; box-shadow: 0 0 6px #22ff44, 0 0 16px #00ff4455; }
-    #feedback-area .digit[data-result="yellow"] .seg.on { background: #ffe600; box-shadow: 0 0 6px #ffe600, 0 0 16px #ffe60055; }
-
-    /* Horizontal segments: a (top), g (middle), d (bottom) */
-    .seg-a, .seg-g, .seg-d {
-      left: 9px;
-      right: 9px;
-      height: 7px;
-      border-radius: 3px;
-    }
-
-    .seg-a { top: 0; }
-    .seg-g { top: calc(50% - 3px); }
-    .seg-d { bottom: 0; }
-
-    /* Vertical segments */
-    .seg-f, .seg-b, .seg-e, .seg-c {
-      width: 7px;
-      border-radius: 3px;
-    }
-
-    /* Top-half vertical segments */
-    .seg-f, .seg-b {
-      top: 8px;
-      height: calc(50% - 11px);
-    }
-    .seg-f { left: 0; }
-    .seg-b { right: 0; }
-
-    /* Bottom-half vertical segments */
-    .seg-e, .seg-c {
-      bottom: 8px;
-      height: calc(50% - 11px);
-    }
-    .seg-e { left: 0; }
-    .seg-c { right: 0; }
-
-    /* ── Guess Dots ── */
-    #guess-dots {
-      display: flex;
-      gap: 14px;
-      align-items: center;
-      justify-content: center;
-    }
-
-    .guess-dot {
-      width: 14px;
-      height: 14px;
-      border-radius: 50%;
-      background: #30363d;
-      transition: background 0.2s, box-shadow 0.2s;
-    }
-
-    .guess-dot.used {
-      background: #ff2222;
-      box-shadow: 0 0 6px #ff2222, 0 0 14px #ff000055;
-    }
-
-    .guess-dot.correct {
-      background: #22ff44;
-      box-shadow: 0 0 6px #22ff44, 0 0 14px #00ff4455;
-    }
-
-    /* ── Keypad ── */
-    #keypad {
-      display: flex;
-      flex-direction: column;
-      gap: 6px;
-    }
-
-    #keypad-numbers {
-      display: grid;
-      grid-template-columns: repeat(5, 54px);
-      gap: 6px;
-    }
-
-    #keypad-actions {
-      display: flex;
-      gap: 6px;
-    }
-
-    #keypad-actions .key {
-      flex: 1;
-    }
-
-    .key {
-      width: 54px;
-      height: 54px;
-      border: 2px solid #30363d;
-      border-radius: 8px;
-      font-size: 1.7rem;
-      font-weight: 700;
-      cursor: pointer;
-      color: #e6edf3;
-      background: transparent;
-      transition: background 0.12s, border-color 0.12s, transform 0.08s;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      user-select: none;
-    }
-
-    .key:hover  { background: #21262d; border-color: #484f58; }
-    .key:active { transform: scale(0.92); }
-
-    .key.del {
-      font-size: 1.1rem;
-      color: #ff2222;
-      border-color: #ff222244;
-    }
-    .key.del:hover { background: #1a0000; border-color: #ff2222; }
-
-    .key.enter {
-      font-size: 0.72rem;
-      letter-spacing: 0.06em;
-      color: #ff2222;
-      border-color: #ff222244;
-    }
-    .key.enter:hover { background: #1a0000; border-color: #ff2222; }
-
-    .key.del.won,
-    .key.enter.won { color: #22ff44; border-color: #22ff4444; }
-    .key.del.won:hover,
-    .key.enter.won:hover { background: #001a00; border-color: #22ff44; }
-
-    .key.spacer {
-      visibility: hidden;
-      pointer-events: none;
-    }
-
-    /* ── Shake animation ── */
-    @keyframes shake {
-      0%, 100% { transform: translateX(0); }
-      20%       { transform: translateX(-6px); }
-      40%       { transform: translateX(6px); }
-      60%       { transform: translateX(-4px); }
-      80%       { transform: translateX(4px); }
-    }
-
-    .shake { animation: shake 0.35s ease; }
-
-    /* ── Message ── */
-    #message {
-      font-size: 0.88rem;
-      color: #8b949e;
-      min-height: 1.3em;
-      text-align: center;
-      letter-spacing: 0.03em;
-    }
-
-    #message.win  { color: #3fb950; font-weight: 600; }
-    #message.lose { color: #f85149; font-weight: 600; }
-
-    /* ── New Game button ── */
-    #new-game {
-      background: #1f6b2e;
-      border: 1px solid #2ea043;
-      color: #e6edf3;
-      border-radius: 8px;
-      padding: 10px 28px;
-      font-size: 0.9rem;
-      font-weight: 600;
-      cursor: pointer;
-      letter-spacing: 0.05em;
-      transition: background 0.15s;
-      display: none;
-    }
-    #new-game:hover { background: #2ea043; }
   </style>
 </head>
 <body>
+  <div id="module">
+    <header>
+      <h1>Code <span>Breaker</span></h1>
+    </header>
+
+    <div id="feedback-area"></div>
+
+    <div id="display-area"></div>
+
+    <div id="guess-dots"></div>
+
+    <div id="keypad"></div>
+
+    <p id="message"></p>
+    <button id="new-game" onclick="newGame()">New Game</button>
+  </div>
+
   <div id="rules">
     <h2>How to Play</h2>
     <ul>
@@ -333,25 +345,7 @@
     </ul>
   </div>
 
-  <div id="module">
-    <header>
-      <h1>Code <span>Breaker</span></h1>
-    </header>
-
-    <div id="feedback-area"></div>
-
-    <div id="display-area"></div>
-
-    <div id="guess-dots"></div>
-
-    <div id="keypad"></div>
-
-    <p id="message">Enter your first guess</p>
-    <button id="new-game" onclick="newGame()">New Game</button>
-  </div>
-
   <script>
-    // Segments lit for each digit 0-9
     // Segments: a=top, b=top-right, c=bottom-right, d=bottom, e=bottom-left, f=top-left, g=middle
     const SEGS = {
       0: 'abcdef',
@@ -473,7 +467,7 @@
       keypad.appendChild(actRow);
     }
 
-function newGame() {
+    function newGame() {
       secretCode = generateCode();
       currentRow = 0;
       currentCol = 0;
@@ -580,7 +574,6 @@ function newGame() {
       const code = [...secretCode];
       const g = [...guess];
 
-      // Green pass
       for (let i = 0; i < 5; i++) {
         if (g[i] === code[i]) {
           result[i] = 'green';
@@ -589,7 +582,6 @@ function newGame() {
         }
       }
 
-      // Yellow pass
       for (let i = 0; i < 5; i++) {
         if (g[i] === -1) continue;
         const idx = code.indexOf(g[i]);
