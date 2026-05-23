@@ -38,7 +38,10 @@
     }
 
     header {
-      text-align: center;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      width: 100%;
     }
 
     h1 {
@@ -52,6 +55,41 @@
     h1 span {
       color: #22ff44;
     }
+
+    /* ── Difficulty buttons ── */
+    #difficulty {
+      display: flex;
+      gap: 6px;
+      align-items: center;
+    }
+
+    .diff-btn {
+      width: 1.6rem;
+      height: 1.6rem;
+      border: 2px solid;
+      border-radius: 6px;
+      font-size: 0.75rem;
+      font-weight: 700;
+      cursor: pointer;
+      background: transparent;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: background 0.12s, color 0.12s;
+      user-select: none;
+    }
+
+    .diff-btn.easy         { color: #ffe600; border-color: #ffe60066; }
+    .diff-btn.easy:hover   { background: #ffe60022; border-color: #ffe600; }
+    .diff-btn.easy.active  { background: #ffe600; color: #000; border-color: #ffe600; }
+
+    .diff-btn.medium        { color: #f8b71f; border-color: #f8b71f66; }
+    .diff-btn.medium:hover  { background: #f8b71f22; border-color: #f8b71f; }
+    .diff-btn.medium.active { background: #f8b71f; color: #000; border-color: #f8b71f; }
+
+    .diff-btn.hard         { color: #f0883e; border-color: #f0883e66; }
+    .diff-btn.hard:hover   { background: #f0883e22; border-color: #f0883e; }
+    .diff-btn.hard.active  { background: #f0883e; color: #000; border-color: #f0883e; }
 
     /* ── Seven-Segment Displays ── */
     #feedback-area,
@@ -213,6 +251,14 @@
     .key.del.won:hover,
     .key.enter.won:hover { background: #001a00; border-color: #22ff44; }
 
+    .key.eliminated {
+      color: #484f58;
+      border-color: #30363d44;
+      opacity: 0.35;
+      cursor: default;
+    }
+    .key.eliminated:hover { background: transparent; border-color: #30363d44; transform: none; }
+
     /* ── Shake animation ── */
     @keyframes shake {
       0%, 100% { transform: translateX(0); }
@@ -313,6 +359,11 @@
   <div id="module">
     <header>
       <h1>Code <span>Breaker</span></h1>
+      <div id="difficulty">
+        <button class="diff-btn easy" id="btn-easy" onclick="setMode('easy')">E</button>
+        <button class="diff-btn medium active" id="btn-medium" onclick="setMode('medium')">M</button>
+        <button class="diff-btn hard" id="btn-hard" onclick="setMode('hard')">H</button>
+      </div>
     </header>
 
     <div id="feedback-area"></div>
@@ -340,8 +391,13 @@
       <div class="legend-item"><span class="swatch gray"></span> Digit not in the code — display stays dark</div>
     </div>
     <ul>
-      <li>The <strong>6 dots</strong> below the red display track your guesses — each turns red when used, and <strong>green</strong> when you crack the code.</li>
-      <li>You have <strong>6 attempts</strong> to guess the correct sequence.</li>
+      <li>The dots below the red display track your guesses — each turns red when used, and <strong>green</strong> when you crack the code.</li>
+    </ul>
+    <h2>Difficulty Levels</h2>
+    <ul>
+      <li><strong style="color:#ffe600">Easy</strong> — 10 attempts. After each guess, any digit confirmed not in the code is grayed out and disabled on the keypad.</li>
+      <li><strong style="color:#f8b71f">Medium</strong> — 10 attempts. All keypad buttons remain active throughout the game.</li>
+      <li><strong style="color:#f0883e">Hard</strong> — 6 attempts. All keypad buttons remain active throughout the game.</li>
     </ul>
   </div>
 
@@ -361,6 +417,30 @@
     };
 
     let secretCode, currentRow, currentCol, guesses, gameOver, scrambling;
+    let eliminatedDigits = new Set();
+
+    function applyEliminations() {
+      document.querySelectorAll('#keypad-numbers .key').forEach(btn => {
+        const digit = parseInt(btn.textContent);
+        if (eliminatedDigits.has(digit)) {
+          btn.classList.add('eliminated');
+          btn.disabled = true;
+        }
+      });
+    }
+    let currentMode = 'medium';
+
+    function maxGuesses() {
+      return (currentMode === 'easy' || currentMode === 'medium') ? 10 : 6;
+    }
+
+    function setMode(mode) {
+      currentMode = mode;
+      document.getElementById('btn-easy').classList.toggle('active', mode === 'easy');
+      document.getElementById('btn-medium').classList.toggle('active', mode === 'medium');
+      document.getElementById('btn-hard').classList.toggle('active', mode === 'hard');
+      newGame();
+    }
 
     function generateCode() {
       return Array.from({ length: 5 }, () => Math.floor(Math.random() * 10));
@@ -388,7 +468,7 @@
     function buildDots() {
       const container = document.getElementById('guess-dots');
       container.innerHTML = '';
-      for (let i = 0; i < 6; i++) {
+      for (let i = 0; i < maxGuesses(); i++) {
         const dot = document.createElement('div');
         dot.className = 'guess-dot';
         dot.id = `dot${i}`;
@@ -471,9 +551,10 @@
       secretCode = generateCode();
       currentRow = 0;
       currentCol = 0;
-      guesses = Array.from({ length: 6 }, () => Array(5).fill(null));
+      guesses = Array.from({ length: maxGuesses() }, () => Array(5).fill(null));
       gameOver = false;
       scrambling = false;
+      eliminatedDigits = new Set();
 
       buildDisplay();
       buildFeedback();
@@ -501,6 +582,7 @@
 
     function addDigit(digit) {
       if (gameOver || scrambling || currentCol >= 5) return;
+      if (currentMode === 'easy' && eliminatedDigits.has(digit)) return;
       const col = currentCol;
       guesses[currentRow][col] = digit;
       currentCol++;
@@ -535,6 +617,20 @@
         if (result[i] !== 'green') clearDisplay(i);
       }
 
+      // In easy mode, eliminate digits that are gray in every position they appear
+      if (currentMode === 'easy') {
+        const nonGray = new Set();
+        for (let i = 0; i < 5; i++) {
+          if (result[i] !== 'gray') nonGray.add(guess[i]);
+        }
+        for (let i = 0; i < 5; i++) {
+          if (result[i] === 'gray' && !nonGray.has(guess[i])) {
+            eliminatedDigits.add(guess[i]);
+          }
+        }
+        applyEliminations();
+      }
+
       // Light the dot for this guess
       document.getElementById(`dot${currentRow}`).classList.add('used');
 
@@ -556,14 +652,14 @@
           setMessage('', 'win');
           gameOver = true;
           document.getElementById('new-game').style.display = 'inline-block';
-        } else if (currentRow === 5) {
+        } else if (currentRow === maxGuesses() - 1) {
           setMessage(`Game over — the code was ${secretCode.join('')}`, 'lose');
           gameOver = true;
           document.getElementById('new-game').style.display = 'inline-block';
         } else {
           currentRow++;
           currentCol = 0;
-          const left = 6 - currentRow;
+          const left = maxGuesses() - currentRow;
           setMessage(`${left} ${left === 1 ? 'guess' : 'guesses'} remaining`, '');
         }
       }, 800);
