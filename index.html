@@ -402,6 +402,55 @@
   </div>
 
   <script>
+    // ── Audio ──
+    let audioCtx = null;
+    function getAudioCtx() {
+      if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+      return audioCtx;
+    }
+
+    function playTone(freq, type, duration, volume, when) {
+      const ctx = getAudioCtx();
+      const t = when ?? ctx.currentTime;
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.connect(gain);
+      gain.connect(ctx.destination);
+      osc.type = type;
+      osc.frequency.setValueAtTime(freq, t);
+      gain.gain.setValueAtTime(volume, t);
+      gain.gain.exponentialRampToValueAtTime(0.0001, t + duration);
+      osc.start(t);
+      osc.stop(t + duration + 0.01);
+    }
+
+    function playDigitSound() { playTone(1200, 'square', 0.07, 0.08); }
+    function playDeleteSound() { playTone(500, 'sine', 0.09, 0.09); }
+    function playErrorSound()  { playTone(110, 'sawtooth', 0.25, 0.18); }
+
+    function playFeedbackSound(result) {
+      const ctx = getAudioCtx();
+      const t = ctx.currentTime;
+      result.forEach((r, i) => {
+        if (r === 'green')  playTone(1046.5, 'sine', 0.22, 0.15, t + i * 0.09);
+        else if (r === 'yellow') playTone(784, 'sine', 0.18, 0.10, t + i * 0.09);
+      });
+    }
+
+    function playWinSound() {
+      const ctx = getAudioCtx();
+      const t = ctx.currentTime;
+      [523.25, 659.25, 783.99, 1046.5, 1318.51].forEach((freq, i) =>
+        playTone(freq, 'sine', 0.35, 0.18, t + i * 0.11));
+    }
+
+    function playLoseSound() {
+      const ctx = getAudioCtx();
+      const t = ctx.currentTime;
+      [493.88, 440, 392, 349.23].forEach((freq, i) =>
+        playTone(freq, 'sawtooth', 0.35, 0.14, t + i * 0.14));
+    }
+
     // Segments: a=top, b=top-right, c=bottom-right, d=bottom, e=bottom-left, f=top-left, g=middle
     const SEGS = {
       0: 'abcdef',
@@ -583,6 +632,7 @@
     function addDigit(digit) {
       if (gameOver || scrambling || currentCol >= 5) return;
       if (currentMode === 'easy' && eliminatedDigits.has(digit)) return;
+      playDigitSound();
       const col = currentCol;
       guesses[currentRow][col] = digit;
       currentCol++;
@@ -595,6 +645,7 @@
       currentCol--;
       guesses[currentRow][currentCol] = null;
       clearDisplay(currentCol);
+      playDeleteSound();
     }
 
     function submitGuess() {
@@ -606,11 +657,13 @@
         void area.offsetWidth;
         area.classList.add('shake');
         setMessage('Enter all 5 digits first', '');
+        playErrorSound();
         return;
       }
 
       const guess = guesses[currentRow];
       const result = evaluateGuess(guess);
+      playFeedbackSound(result);
 
       // Keep green digits lit, clear the rest
       for (let i = 0; i < 5; i++) {
@@ -650,10 +703,12 @@
           dot.classList.add('correct');
           document.querySelectorAll('.key.del, .key.enter').forEach(btn => btn.classList.add('won'));
           setMessage('', 'win');
+          playWinSound();
           gameOver = true;
           document.getElementById('new-game').style.display = 'inline-block';
         } else if (currentRow === maxGuesses() - 1) {
           setMessage(`Game over — the code was ${secretCode.join('')}`, 'lose');
+          playLoseSound();
           gameOver = true;
           document.getElementById('new-game').style.display = 'inline-block';
         } else {
